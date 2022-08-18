@@ -44,6 +44,68 @@ services:
     volumes: 
       - ./configuration/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
 
+  chirpstack-rest-api:
+    image: chirpstack/chirpstack-rest-api:4.0.0-rc.1
+    command: --server chirpstack:8080 --bind 0.0.0.0:8090 --insecure
+    ports:
+      - 8090:8090
+    depends_on:
+      - chirpstack
+
+  grafana:
+    env_file: .env
+    image: grafana/grafana-oss:latest
+    restart: always
+    depends_on:
+      - mysql
+    ports:
+      - 3000:3000
+
+  mysql:
+    env_file: .env
+    image: mysql/mysql-server:latest
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - 3306:3306
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - 8081:80
+    environment:
+      - PMA_ARBITRARY=1
+
+  influxdb:
+    env_file: .env
+    image: influxdb:latest
+    ports:
+      - 8086:8086
+    volumes:
+      - ./influxdb/data:/var/lib/influxdb2
+      - ./influxdb/config/config.yml:/etc/influxdb2/config.yml
+
+  prometheus:
+    env_file: ./.env
+    user: root
+    image: prom/prometheus:latest
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus/prometheus.yaml:/etc/prometheus/prometheus.yml
+      - ./prometheus/recording:/etc/prometheus/recording
+      - ./prometheus/alert:/etc/prometheus/alert
+      - ./prometheus/data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--storage.tsdb.retention.time=1y"
+      - "--web.enable-lifecycle"
+
+
 volumes:
   postgresqldata:
   redisdata:

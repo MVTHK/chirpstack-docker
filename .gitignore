@@ -5,3 +5,8 @@
 # data folder
 /data
 /lorawan-devices
+
+influxdb/
+mysql/
+mysql3/
+prometheus/
